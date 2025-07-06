@@ -1,0 +1,54 @@
+{
+  "name": "SIEM_EDR_Integration",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "trigger-1",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [ -900, 300 ]
+    },
+    {
+      "parameters": {
+        "requestMethod": "POST",
+        "url": "https://your-siem-or-edr-endpoint.example.com/api/events",
+        "jsonParameters": true,
+        "options": {},
+        "bodyParametersJson": "={{JSON.stringify($json)}}"
+      },
+      "id": "http-1",
+      "name": "Forward to SIEM/EDR",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [ -600, 300 ]
+    },
+    {
+      "parameters": {
+        "fromEmail": "alerts@example.com",
+        "toEmail": "security@example.com",
+        "subject": "Security Event Forwarded to SIEM/EDR",
+        "text": "A security event was received and forwarded to the SIEM/EDR platform.\n\nEvent Data: {{$json}}"
+      },
+      "id": "email-1",
+      "name": "Send Confirmation Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 1,
+      "position": [ -300, 300 ],
+      "credentials": {
+        "smtp": "YOUR_SMTP_CREDENTIAL_NAME"
+      }
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [ [ { "node": "Forward to SIEM/EDR", "type": "main", "index": 0 } ] ]
+    },
+    "Forward to SIEM/EDR": {
+      "main": [ [ { "node": "Send Confirmation Email", "type": "main", "index": 0 } ] ]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "versionId": "v1"
+} 

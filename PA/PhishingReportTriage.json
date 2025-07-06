@@ -1,0 +1,81 @@
+{
+  "name": "PhishingReportTriage",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "trigger-1",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [ -1000, 300 ]
+    },
+    {
+      "parameters": {
+        "functionCode": "const emailBody = $json.body || '';\nconst urlRegex = /(https?:\\/\\/[^\\s]+)/g;\nconst urls = emailBody.match(urlRegex) || [];\nreturn urls.map(url => ({ json: { url } }));"
+      },
+      "id": "extract-urls-1",
+      "name": "Extract URLs",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [ -700, 300 ]
+    },
+    {
+      "parameters": {
+        "resource": "url",
+        "operation": "report",
+        "url": "={{$json.url}}"
+      },
+      "id": "virustotal-1",
+      "name": "VirusTotal URL Lookup",
+      "type": "n8n-nodes-base.virusTotal",
+      "typeVersion": 1,
+      "position": [ -400, 300 ],
+      "credentials": {
+        "virusTotalApi": "YOUR_VIRUSTOTAL_CREDENTIAL_NAME"
+      }
+    },
+    {
+      "parameters": {
+        "functionCode": "return [{ json: { urls: items.map(i => i.json.url), results: items.map(i => i.json) } }];"
+      },
+      "id": "aggregate-1",
+      "name": "Aggregate Results",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [ -100, 300 ]
+    },
+    {
+      "parameters": {
+        "fromEmail": "alerts@example.com",
+        "toEmail": "security@example.com",
+        "subject": "Phishing Report Triage Summary",
+        "text": "Phishing report triage completed.\n\nURLs checked: {{$json.urls}}\n\nVirusTotal Results: {{$json.results}}"
+      },
+      "id": "email-1",
+      "name": "Send Triage Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 1,
+      "position": [ 200, 300 ],
+      "credentials": {
+        "smtp": "YOUR_SMTP_CREDENTIAL_NAME"
+      }
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [ [ { "node": "Extract URLs", "type": "main", "index": 0 } ] ]
+    },
+    "Extract URLs": {
+      "main": [ [ { "node": "VirusTotal URL Lookup", "type": "main", "index": 0 } ] ]
+    },
+    "VirusTotal URL Lookup": {
+      "main": [ [ { "node": "Aggregate Results", "type": "main", "index": 0 } ] ]
+    },
+    "Aggregate Results": {
+      "main": [ [ { "node": "Send Triage Email", "type": "main", "index": 0 } ] ]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "versionId": "v1"
+} 

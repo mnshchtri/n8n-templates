@@ -1,0 +1,52 @@
+{
+  "name": "DailyVulnNewsSummary",
+  "nodes": [
+    {
+      "parameters": {
+        "url": "https://nvd.nist.gov/feeds/xml/cve/misc/nvd-rss.xml"
+      },
+      "id": "rss-1",
+      "name": "Fetch Vulnerability RSS",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1,
+      "position": [ -900, 300 ]
+    },
+    {
+      "parameters": {
+        "functionCode": "const topItems = items.slice(0, 5);\nconst summary = topItems.map((item, idx) => `${idx+1}. ${item.json.title} - ${item.json.link}`).join('\\n');\nreturn [{ json: { summary } }];"
+      },
+      "id": "summarize-1",
+      "name": "Summarize Top Vulns",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [ -600, 300 ]
+    },
+    {
+      "parameters": {
+        "fromEmail": "alerts@example.com",
+        "toEmail": "security@example.com",
+        "subject": "Daily Vulnerability News Summary",
+        "text": "{{$json.summary}}"
+      },
+      "id": "email-1",
+      "name": "Send Summary Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 1,
+      "position": [ -300, 300 ],
+      "credentials": {
+        "smtp": "YOUR_SMTP_CREDENTIAL_NAME"
+      }
+    }
+  ],
+  "connections": {
+    "Fetch Vulnerability RSS": {
+      "main": [ [ { "node": "Summarize Top Vulns", "type": "main", "index": 0 } ] ]
+    },
+    "Summarize Top Vulns": {
+      "main": [ [ { "node": "Send Summary Email", "type": "main", "index": 0 } ] ]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "versionId": "v1"
+} 

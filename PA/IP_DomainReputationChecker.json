@@ -1,0 +1,68 @@
+{
+  "name": "IP_DomainReputationChecker",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "trigger-1",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [ -900, 300 ]
+    },
+    {
+      "parameters": {
+        "resource": "domain",
+        "operation": "report",
+        "domain": "={{$json.domain}}"
+      },
+      "id": "virustotal-domain-1",
+      "name": "VirusTotal Domain Lookup",
+      "type": "n8n-nodes-base.virusTotal",
+      "typeVersion": 1,
+      "position": [ -600, 200 ],
+      "credentials": {
+        "virusTotalApi": "YOUR_VIRUSTOTAL_CREDENTIAL_NAME"
+      }
+    },
+    {
+      "parameters": {
+        "ip": "={{$json.ip}}"
+      },
+      "id": "abuseipdb-1",
+      "name": "AbuseIPDB IP Lookup",
+      "type": "n8n-nodes-base.abuseIpDb",
+      "typeVersion": 1,
+      "position": [ -600, 400 ],
+      "credentials": {
+        "abuseIpDbApi": "YOUR_ABUSEIPDB_CREDENTIAL_NAME"
+      }
+    },
+    {
+      "parameters": {
+        "functionCode": "return [{ json: { virustotal: items[0].json, abuseipdb: items[1].json } }];"
+      },
+      "id": "aggregate-1",
+      "name": "Aggregate Results",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [ -300, 300 ]
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [ { "node": "VirusTotal Domain Lookup", "type": "main", "index": 0 } ],
+        [ { "node": "AbuseIPDB IP Lookup", "type": "main", "index": 0 } ]
+      ]
+    },
+    "VirusTotal Domain Lookup": {
+      "main": [ [ { "node": "Aggregate Results", "type": "main", "index": 0 } ] ]
+    },
+    "AbuseIPDB IP Lookup": {
+      "main": [ [ { "node": "Aggregate Results", "type": "main", "index": 1 } ] ]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "versionId": "v1"
+} 

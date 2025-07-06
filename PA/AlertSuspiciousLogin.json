@@ -1,0 +1,74 @@
+{
+  "name": "AlertSuspiciousLogin",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "trigger-1",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [ -900, 300 ]
+    },
+    {
+      "parameters": {
+        "ip": "={{$json.ip}}"
+      },
+      "id": "abuseipdb-1",
+      "name": "AbuseIPDB IP Lookup",
+      "type": "n8n-nodes-base.abuseIpDb",
+      "typeVersion": 1,
+      "position": [ -600, 300 ],
+      "credentials": {
+        "abuseIpDbApi": "YOUR_ABUSEIPDB_CREDENTIAL_NAME"
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "any": [
+            {
+              "value1": "={{$json.abuseConfidenceScore}}",
+              "operation": ">=",
+              "value2": 50
+            }
+          ]
+        }
+      },
+      "id": "if-1",
+      "name": "Is Suspicious?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [ -300, 300 ]
+    },
+    {
+      "parameters": {
+        "fromEmail": "alerts@example.com",
+        "toEmail": "security@example.com",
+        "subject": "Suspicious Login Detected",
+        "text": "A suspicious login was detected from IP: {{$json.ip}}. AbuseIPDB Confidence Score: {{$json.abuseConfidenceScore}}."
+      },
+      "id": "email-1",
+      "name": "Send Alert Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 1,
+      "position": [ 0, 300 ],
+      "credentials": {
+        "smtp": "YOUR_SMTP_CREDENTIAL_NAME"
+      }
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [ [ { "node": "AbuseIPDB IP Lookup", "type": "main", "index": 0 } ] ]
+    },
+    "AbuseIPDB IP Lookup": {
+      "main": [ [ { "node": "Is Suspicious?", "type": "main", "index": 0 } ] ]
+    },
+    "Is Suspicious?": {
+      "main": [ [ { "node": "Send Alert Email", "type": "main", "index": 0 } ] ]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "versionId": "v1"
+} 
